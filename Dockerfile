@@ -1,14 +1,26 @@
-# Use a base image with Java runtime
-FROM openjdk:21
+# ------------ Build Stage ------------
+FROM maven:3.9.6-eclipse-temurin-21 AS build
 
 # Set the working directory
 WORKDIR /app
 
-# Copy the JAR file and rename it to app.jar
-COPY target/SpringBootDeploymentDemo-0.0.1-SNAPSHOT.jar app.jar
+# Copy all project files
+COPY . .
 
-# Expose the port (optional, helpful for local testing)
+# Package the application (skip tests for faster build)
+RUN mvn clean package -DskipTests
+
+# ------------ Run Stage ------------
+FROM eclipse-temurin:21-jdk
+
+# Set the working directory
+WORKDIR /app
+
+# Copy the generated JAR from the build stage
+COPY --from=build /app/target/SpringBootDeploymentDemo-0.0.1-SNAPSHOT.jar app.jar
+
+# Expose the application port
 EXPOSE 8000
 
-# Run the application
+# Command to run the JAR
 ENTRYPOINT ["java", "-jar", "app.jar"]
